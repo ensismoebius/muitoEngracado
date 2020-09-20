@@ -1,0 +1,31 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Rust: cargo check - muitoEngracado",
+			"type": "shell",
+			"command": "CARGO_INCREMENTAL=1 cargo check",
+			"args": [],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Rust: cargo run - muitoEngracado",
+			"type": "shell",
+			"command": "CARGO_INCREMENTAL=1 cargo run",
+			"args": [],
+			"problemMatcher": []
+		},
+		{
+			"label": "Rust: cargo build - muitoEngracado",
+			"type": "shell",
+			"command": "CARGO_INCREMENTAL=1 cargo build",
+			"args": [],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
