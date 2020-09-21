@@ -1,8 +1,5 @@
-//! # TreeView Sample
-//!
-//! This sample demonstrates how to create a TreeView with a ListStore.
-
 extern crate gio;
+extern crate glib;
 extern crate gtk;
 
 use gio::prelude::*;
@@ -11,13 +8,27 @@ use gtk::prelude::*;
 use std::env::args;
 
 fn main() {
-    let application = gtk::Application::new(Some("com.github.muito_engracado"), Default::default())
+    let application = gtk::Application::new(Some("com.github.muitoengracado"), Default::default())
         .expect("Initialization failed...");
     application.connect_activate(|app| build_ui(app));
     application.run(&args().collect::<Vec<_>>());
 }
 
 fn build_ui(app: &gtk::Application) {
+    // Signal handlers setup
+
+    // Message struct
+    enum Message {
+        UpdateFeeds(),
+        AddNewFeed(String),
+        DeleteFeed(String),
+        MarkNewsAsRead(String),
+        MarkNewsAsNotRead(String),
+    }
+
+    // Create a new sender/receiver pair with default priority
+    let (sender, receiver) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
     // Widgets setup
 
     // Viewers
@@ -50,6 +61,9 @@ fn build_ui(app: &gtk::Application) {
 
     // Creation of the label.
     let button = gtk::Button::with_label("Click here");
+    button.connect_clicked(move |_| {
+        let _ = sender.send(Message::UpdateFeeds());
+    });
 
     // Vbox
     let vertical_box: gtk::Box = gtk::Box::new(gtk::Orientation::Vertical, 1);
@@ -63,6 +77,27 @@ fn build_ui(app: &gtk::Application) {
     window.set_position(gtk::WindowPosition::Center);
     window.add(&vertical_box);
     window.show_all();
+
+    std::thread::spawn(move || {
+        button.set_label("Processing!!");
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        // Sending fails if the receiver is closed
+        button.set_label("Readed!!")
+    });
+
+    // Attach the receiver to the default main context (None)
+    // and on every message update the label accordingly.
+    receiver.attach(None, move |msg| {
+        match msg {
+            Message::UpdateFeeds() => {}
+            Message::AddNewFeed(text) => button.set_label(text.as_str()),
+            Message::DeleteFeed(text) => button.set_label(text.as_str()),
+            Message::MarkNewsAsRead(text) => button.set_label(text.as_str()),
+            Message::MarkNewsAsNotRead(text) => button.set_label(text.as_str()),
+        }
+        // Returning false here would close the receiver and have senders fail
+        glib::Continue(true)
+    });
 }
 
 fn create_tree_view_storage() -> gtk::ListStore {
